@@ -4,39 +4,88 @@ $itemHeight: 40px;
   user-select: none;
   border: 3px solid lightcoral;
   height: 100vh;
-  .dropArea {
-    & > div {
-      display: flex;
-      margin-bottom: 20px;
-      .itemWrapper {
-        display: flex;
-        border: 2px solid purple;
-        justify-content: center;
-        align-items: center;
-        height: $itemHeight;
-        margin: 0 6px 0 0;
 
-        .itemHandle {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          border: 1px solid blue;
-          height: 100%;
-          background-color: gray;
-          padding: 0 6px;
-          cursor: grab;
+  .dropArea {
+    & > section {
+      & > div {
+        display: flex;
+        margin-bottom: 20px;
+        background-color: #001529;
+
+        &.droppableSeperator {
+          // border: 2px solid rgb(48, 182, 227);
+          background-color: transparent;
+          height: 10px;
+          &.dropping {
+            background-color: rgb(48, 182, 227);
+          }
         }
 
-        .quoteItem {
-          min-width: 70px;
-          height: 100%;
-          border: 1px solid grey;
-
-          background-color: lightblue;
-          padding: 4px 6px;
+        .itemWrapper {
           display: flex;
+          border: 2px solid purple;
           justify-content: center;
           align-items: center;
+          height: $itemHeight;
+          margin: 0 6px 0 0;
+
+          .itemHandle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid blue;
+            height: 100%;
+            background-color: gray;
+            padding: 0 6px;
+            cursor: grab;
+          }
+
+          .quoteItem {
+            min-width: 70px;
+            height: 100%;
+            border: 1px solid grey;
+
+            background-color: lightblue;
+            padding: 4px 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            &.background {
+              background-size: 40px 100%;
+              background-repeat: repeat-x;
+            }
+            &.img0 {
+              background-image: url('../assets/img0.jpeg');
+            }
+            &.img1 {
+              background-image: url('../assets/img1.png');
+            }
+            &.img2 {
+              background-image: url('../assets/img2.png');
+            }
+            &.img3 {
+              background-image: url('../assets/img3.png');
+            }
+            &.img4 {
+              background-image: url('../assets/img4.jpeg');
+            }
+            &.img5 {
+              background-image: url('../assets/img5.jpeg');
+            }
+            &.img6 {
+              background-image: url('../assets/img6.jpeg');
+            }
+            &.img7 {
+              background-image: url('../assets/img7.jpeg');
+            }
+            &.img8 {
+              background-image: url('../assets/img8.jpeg');
+            }
+            &.img9 {
+              background-image: url('../assets/img9.jpeg');
+            }
+          }
         }
       }
     }
