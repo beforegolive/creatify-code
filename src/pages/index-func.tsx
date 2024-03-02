@@ -34,18 +34,17 @@ interface ICoreItem {
   content: string
   dynamicWidth: number
   specificImgClassName: string
-  isPlaceHolder: boolean
+  // isPlaceHolder: boolean
   leftPlaceHolderWidth: number
 }
 
 let _incId = 0
-const createItem = (specificImgClassName = '', dynamicWidth = 0, isPlaceHolder = false): ICoreItem => {
+const createItem = (specificImgClassName = '', dynamicWidth = 0): ICoreItem => {
   _incId++
   return {
     id: `id-${_incId}`,
     index: _incId,
-    isPlaceHolder,
-    content: `${isPlaceHolder ? 'placeHolder' : 'normal'} ${_incId}`,
+    content: `item ${_incId}`,
     dynamicWidth: dynamicWidth,
     specificImgClassName: specificImgClassName,
     leftPlaceHolderWidth: 0,
@@ -182,72 +181,6 @@ const move = (source, destination, droppableSource, droppableDestination) => {
   return result
 }
 
-function Quote({ quote, index, trackId, list }) {
-  const handleExtendFuncMouseDown = (e, direction: ExtendDirection) => {
-    mouseDownItemId = quote.id
-    mouseDownItemIndex = index
-    mouseDownItem = quote
-    mouseDownTrackId = trackId
-    clientXWhenMouseDown = e.nativeEvent.clientX
-    curExtendDirection = direction
-    mouseDownItemPlaceHolderWith = quote.leftPlaceHolderWidth
-    mouseDownNextItemPlaceHolderWidth =
-      index >= list.length - 1 ? thresHoldWidth : list[index + 1].leftPlaceHolderWidth
-    console.log(
-      '=== onMouseDown id:',
-      quote.id,
-      ' , clientXWhenMouseDown:',
-      clientXWhenMouseDown,
-      ', e.nativeEvent.clientX:',
-      e.nativeEvent.clientX,
-      ', e.clientX',
-      e.clientX
-    )
-  }
-
-  const { isPlaceHolder, leftPlaceHolderWidth } = quote
-
-  return (
-    <div className='itemWrapper'>
-      <div className='placeHolder' style={{ width: leftPlaceHolderWidth }}></div>
-      <span
-        className='itemHandle left'
-        onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.left)}
-      >
-        {'<'}
-      </span>
-      <Draggable draggableId={quote.id} index={index} isDragDisabled={isPlaceHolder}>
-        {(provided, snapshot) => {
-          if (isPlaceHolder) {
-            return <div>123</div>
-          }
-
-          const imgIndex = quote.index % maxImgInDemo
-          const finalImIClassName = _.isEmpty(quote.specificImgClassName)
-            ? `img${imgIndex}`
-            : quote.specificImgClassName
-          return (
-            <div
-              className={`quoteItem background ${finalImIClassName}`}
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              {...provided.dragHandleProps}
-              style={{ width: quote.dynamicWidth, ...provided.draggableProps.style }}
-            ></div>
-          )
-        }}
-      </Draggable>
-      <span
-        className='itemHandle right'
-        // onClick={() => console.log('right')}
-        onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.right)}
-      >
-        {'>'}
-      </span>
-    </div>
-  )
-}
-
 const draggableImgs = [
   {
     index: 101,
@@ -283,26 +216,6 @@ const initMultiTrackItemsData = () => {
   return listObj
 }
 
-const getNearByPlaceholder = (targetIndex, targetList, direction) => {
-  if (direction === ExtendDirection.right) {
-    // 往右时，最后项则直接返回null
-    if (targetIndex === targetList.length - 1) {
-      return null
-    }
-
-    const nextItem = targetList[targetIndex + 1]
-    return nextItem?.isPlaceholder === true ? nextItem : null
-  } else {
-    // 往左时，第一项则直接返回null
-    if (targetIndex === 0) {
-      return null
-    }
-
-    const prevItem = targetList[targetIndex - 1]
-    return prevItem?.isPlaceholder === true ? prevItem : null
-  }
-}
-
 let _incSeed = 1
 const getNewTrackName = () => {
   return `newTrack${_incSeed++}`
@@ -313,16 +226,77 @@ function QuoteApp() {
   const [trackList, setTrackList] = useState(['track1', 'track2', 'track3'])
   const initData = initMultiTrackItemsData()
   const [allTrackItemsObj, setAllTrackItemsObj] = useState(initData)
+  const [draggingItemId, setDraggingItemId] = useState('')
 
   const getItemListFromKey = (dropableId: string) => {
     return allTrackItemsObj[dropableId]?.items || []
   }
 
-  console.log('=== allTrackItemsObj:', allTrackItemsObj)
+  function Quote({ quote, index, trackId, list }) {
+    const handleExtendFuncMouseDown = (e, direction: ExtendDirection) => {
+      mouseDownItemId = quote.id
+      mouseDownItemIndex = index
+      mouseDownItem = quote
+      mouseDownTrackId = trackId
+      clientXWhenMouseDown = e.nativeEvent.clientX
+      curExtendDirection = direction
+      mouseDownItemPlaceHolderWith = quote.leftPlaceHolderWidth
+      mouseDownNextItemPlaceHolderWidth =
+        index >= list.length - 1 ? thresHoldWidth : list[index + 1].leftPlaceHolderWidth
+    }
+
+    const { leftPlaceHolderWidth } = quote
+    const isCurrItemDragging = quote.id === draggingItemId
+
+    return (
+      <div className='itemWrapper'>
+        {!isCurrItemDragging && (
+          <>
+            {' '}
+            <div className='placeHolder' style={{ width: leftPlaceHolderWidth }}></div>
+            <span
+              className='itemHandle left'
+              onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.left)}
+            >
+              {'<'}
+            </span>
+          </>
+        )}
+        <Draggable draggableId={quote.id} index={index}>
+          {(provided, snapshot) => {
+            const imgIndex = quote.index % maxImgInDemo
+            const finalImIClassName = _.isEmpty(quote.specificImgClassName)
+              ? `img${imgIndex}`
+              : quote.specificImgClassName
+            return (
+              <div
+                className={`quoteItem background ${finalImIClassName}`}
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                style={{ width: quote.dynamicWidth, ...provided.draggableProps.style }}
+              ></div>
+            )
+          }}
+        </Draggable>
+        {!isCurrItemDragging && (
+          <span
+            className='itemHandle right'
+            // onClick={() => console.log('right')}
+            onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.right)}
+          >
+            {'>'}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   function onDragEnd(result) {
     const { source, destination, draggableId } = result
     console.log('=== result:', result)
+
+    setDraggingItemId('')
 
     if (!destination) {
       return
@@ -473,7 +447,14 @@ function QuoteApp() {
         curExtendDirection = undefined
       }}
     >
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext
+        onDragEnd={onDragEnd}
+        onBeforeDragStart={(e) => {
+          setDraggingItemId(e.draggableId)
+          console.log('=== onBeforeDragStart e:', e)
+        }}
+        onDragStart={(e) => console.log('=== onDragStart e:', e)}
+      >
         <aside>
           <div className='imgPanel'>
             <Droppable className='imgPickArea' droppableId={'imgPickArea'} isDropDisabled={true}>
