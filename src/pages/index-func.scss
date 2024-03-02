@@ -1,11 +1,13 @@
 $itemHeight: 40px;
 
 .mainPage {
+  user-select: none;
   border: 3px solid lightcoral;
   height: 100vh;
   .dropArea {
     & > div {
       display: flex;
+      margin-bottom: 20px;
       .itemWrapper {
         display: flex;
         border: 2px solid purple;

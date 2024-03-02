@@ -116,7 +116,7 @@ export class App extends Component {
         <h3>multi</h3>
         <section className='listPanel'>
           <DragDropContext onDragEnd={this.onDragEnd}>
-            <Droppable droppableId='droppable'>
+            <Droppable droppableId='droppable' direction='horizontal'>
               {(provided, snapshot) => {
                 console.log('=== snapshot:', snapshot)
                 return (
@@ -140,7 +140,7 @@ export class App extends Component {
                 )
               }}
             </Droppable>
-            <Droppable droppableId='droppable2'>
+            <Droppable droppableId='droppable2' direction='horizontal'>
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} style={getListStyle(snapshot.isDraggingOver)}>
                   {this.state.selected.map((item, index) => (
