@@ -57,7 +57,7 @@ const initialList = (total) =>
   })
 
 const reorder = (list, startIndex, endIndex) => {
-  const result = Array.from(list)
+  const result = _.cloneDeep(list)
   const [removed] = result.splice(startIndex, 1)
   result.splice(endIndex, 0, removed)
 
@@ -307,9 +307,17 @@ function QuoteApp() {
         return
       }
 
-      const items = reorder(state.items, result.source.index, curDestination.index)
+      const clonedAllTrackItems = _.cloneDeep(allTrackItemsObj)
+      const curTrackItems = clonedAllTrackItems[source.droppableId]
 
-      setState({ items })
+      const items = reorder(curTrackItems.items, result.source.index, curDestination.index)
+
+      let pendingResult = {}
+      pendingResult[source.droppableId] = { items }
+
+      const resultData = { ...clonedAllTrackItems, ...pendingResult }
+
+      setAllTrackItemsObj(resultData)
     } else {
       // 跨轨道拖拽
       console.log('=== sourceId:', source.droppableId, ' , targetId:', curDestination.droppableId)
@@ -321,6 +329,8 @@ function QuoteApp() {
       setAllTrackItemsObj(pendingData)
     }
   }
+
+  console.log('==== allTrackItemsObj', allTrackItemsObj)
 
   return (
     <section
@@ -436,7 +446,7 @@ function QuoteApp() {
                     )
                   }}
                 </Droppable>
-                {/* 用于拖动放置的轨道区域展示 */}
+                {/* 主数据项，用于拖动放置的轨道区域展示 */}
                 <Droppable key={trackId} className='dropList' droppableId={trackId} direction='horizontal'>
                   {(provided, snapshot) => {
                     return (
