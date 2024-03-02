@@ -1,0 +1,22 @@
+.dropArea {
+  & > div {
+    display: flex;
+    .itemWrapper {
+      display: flex;
+      border: 2px solid purple;
+      justify-content: center;
+      align-items: center;
+    }
+    .quoteItem {
+      width: 70px;
+      height: 40px;
+      border: 1px solid grey;
+      margin: 3px 5px;
+      background-color: lightblue;
+      padding: 4px 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+}
