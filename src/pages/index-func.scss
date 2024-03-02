@@ -1,8 +1,9 @@
 $itemHeight: 40px;
+$itemMinWidth: 50px;
 
 .mainPage {
   user-select: none;
-  border: 3px solid lightcoral;
+  // border: 3px solid lightcoral;
   height: 100vh;
   display: flex;
   padding-right: 20px;
@@ -13,7 +14,7 @@ $itemHeight: 40px;
     margin-right: 20px;
 
     .imgPanel {
-      border: 2px solid red;
+      // border: 2px solid red;
       padding: 20px;
       display: flex;
       flex-direction: column;
@@ -47,25 +48,31 @@ $itemHeight: 40px;
 
         .itemWrapper {
           display: flex;
-          border: 2px solid purple;
+          // border: 2px solid purple;
           justify-content: center;
           align-items: center;
           height: $itemHeight;
           margin: 0 6px 0 0;
 
+          .placeHolder {
+            // border: 1px solid red;
+            height: 100%;
+          }
+
           .itemHandle {
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 1px solid blue;
+            // border: 1px solid blue;
             height: 100%;
             background-color: gray;
             padding: 0 6px;
             cursor: grab;
+            color: white;
           }
 
           .quoteItem {
-            min-width: 70px;
+            min-width: $itemMinWidth;
             height: 100%;
             border: 1px solid grey;
 

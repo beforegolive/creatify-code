@@ -198,6 +198,8 @@
     "no-extra-boolean-cast": ["off"],
     "@typescript-eslint/no-empty-interface": ["off"],
     "@typescript-eslint/prefer-as-const": ["off"],
-    "no-unsafe-optional-chaining": "off"
+    "no-unsafe-optional-chaining": "off",
+    "no-empty": "off",
+    "prefer-const": "off"
   }
 }

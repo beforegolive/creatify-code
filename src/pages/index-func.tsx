@@ -7,27 +7,48 @@ import dragImg1 from '../assets/dragimg1.jpeg'
 import dragImg2 from '../assets/dragimg2.jpeg'
 import dragImg3 from '../assets/dragimg3.jpeg'
 
+enum ExtendDirection {
+  right = 0,
+  left,
+}
+
 // demo中的最大背景图片数
 const maxImgInDemo = 9
 
 let mouseDownItemId = ''
 let mouseDownItemIndex = -1
 let mouseDownItem = null
+let mouseDownItemPlaceHolderWith = 0
+let mouseDownNextItemPlaceHolderWidth = 0
 let mouseDownTrackId = ''
 let clientXWhenMouseDown = undefined
+// left or right
+let curExtendDirection = ExtendDirection.right
 
 const seperatorPrefix = 'pre-'
 const outsidePrefix = 'outside-'
 
+interface ICoreItem {
+  id: string
+  index: number
+  content: string
+  dynamicWidth: number
+  specificImgClassName: string
+  isPlaceHolder: boolean
+  leftPlaceHolderWidth: number
+}
+
 let _incId = 0
-const createItem = (specificImgClassName = '', dynamicWidth = 0) => {
+const createItem = (specificImgClassName = '', dynamicWidth = 0, isPlaceHolder = false): ICoreItem => {
   _incId++
   return {
     id: `id-${_incId}`,
-    content: `content ${_incId}`,
+    index: _incId,
+    isPlaceHolder,
+    content: `${isPlaceHolder ? 'placeHolder' : 'normal'} ${_incId}`,
     dynamicWidth: dynamicWidth,
     specificImgClassName: specificImgClassName,
-    index: _incId,
+    leftPlaceHolderWidth: 0,
   }
 }
 
@@ -51,6 +72,97 @@ const updateItemInState = (index, list, newProps) => {
   return clonedArr
 }
 
+const thresHoldWidth = 5
+const updateNextPlaceholdOnRightDirection = (targetIndex: number, targetList: ICoreItem[], diffX: number) => {
+  const clonedTargetList = _.cloneDeep(targetList)
+  // 往右时，最后项则直接返回null
+  if (targetIndex === clonedTargetList.length - 1) {
+    return clonedTargetList
+  }
+
+  const nextItemIndex = targetIndex + 1
+  let nextItem = clonedTargetList[nextItemIndex]
+  // const hasPlaceHolderItem = nextItem?.isPlaceHolder === true
+  const { leftPlaceHolderWidth } = nextItem
+  const curNextItemLeftPlaceHolderWith = mouseDownNextItemPlaceHolderWidth
+  const absDiffX = Math.abs(diffX)
+  if (diffX > 0) {
+    console.log('=== 宽度扩大')
+    // const finalPlaceHolderWidth = Math.max(leftPlaceHolderWidth - diffX, thresHoldWidth)
+    const finalPlaceHolderWidth = Math.max(curNextItemLeftPlaceHolderWith - diffX, thresHoldWidth)
+    // console.log(
+    //   '=== leftPlaceHolderWidth:',
+    //   leftPlaceHolderWidth,
+    //   ', diffX:',
+    //   diffX,
+    //   ', finalPlaceHolderWidth:',
+    //   finalPlaceHolderWidth
+    // )
+    // 宽度扩大
+    // 当右侧数据占位宽度有值，则吞噬该宽度
+    if (curNextItemLeftPlaceHolderWith > thresHoldWidth) {
+      // const finalPlaceHolderWidth = Math.max(leftPlaceHolderWidth - absDiffX, thresHoldWidth)
+      const pendingItem = { ...nextItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
+      clonedTargetList[nextItemIndex] = pendingItem
+    }
+  } else {
+    console.log('=== 宽度减小')
+    console.log('=== leftPlaceHolderWidth:', leftPlaceHolderWidth, ', diffX:', diffX)
+    // 宽度减少
+
+    const finalPlaceHolderWidth = Math.max(curNextItemLeftPlaceHolderWith + diffX, thresHoldWidth)
+    const pendingItem = { ...nextItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
+    clonedTargetList[nextItemIndex] = pendingItem
+  }
+
+  return clonedTargetList
+}
+
+const updateNextPlaceholdOnLeftDirection = (targetIndex, targetList: ICoreItem[], diffX: number) => {
+  const clonedTargetList = _.cloneDeep(targetList)
+  const curItem = clonedTargetList[targetIndex]
+  const { leftPlaceHolderWidth } = curItem
+
+  // mouseDownItemPlaceHolderWith
+  console.log('=== onLeft diffX:', diffX)
+
+  let finalPlaceHolderWidth = thresHoldWidth
+  if (diffX > 0) {
+    finalPlaceHolderWidth = Math.max(mouseDownItemPlaceHolderWith + diffX, thresHoldWidth)
+  } else {
+    finalPlaceHolderWidth = Math.max(mouseDownItemPlaceHolderWith + diffX, thresHoldWidth)
+  }
+  console.log(
+    '=== onLeft diffX:',
+    diffX,
+    ', leftPlaceHolderWidth:',
+    leftPlaceHolderWidth,
+    ', finalPlaceHolderWidth:',
+    finalPlaceHolderWidth,
+    ', mouseDownItemPlaceHolderWith:',
+    mouseDownItemPlaceHolderWith
+  )
+
+  // console.log(
+  //   '=== leftPlaceHolderWidth:',
+  //   leftPlaceHolderWidth,
+  //   ', absDiffX:',
+  //   absDiffX,
+  //   ', finalPlaceHolderWidth:',
+  //   finalPlaceHolderWidth
+  // )
+  // if (diffX > 0) {
+  // 宽度缩小
+  // const finalWidth = Math.max(leftPlaceHolderWidth + diffX, thresHoldWidth)
+  const pendingItem = { ...curItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
+  clonedTargetList[targetIndex] = pendingItem
+  // } else {
+
+  // }
+
+  return clonedTargetList
+}
+
 /**
  * Moves an item from one list to another list.
  */
@@ -70,24 +182,46 @@ const move = (source, destination, droppableSource, droppableDestination) => {
   return result
 }
 
-function Quote({ quote, index, trackId }) {
-  const handleExtendFuncMouseDown = (e) => {
-    console.log('=== onMouseDown id:', quote.id)
+function Quote({ quote, index, trackId, list }) {
+  const handleExtendFuncMouseDown = (e, direction: ExtendDirection) => {
     mouseDownItemId = quote.id
     mouseDownItemIndex = index
     mouseDownItem = quote
     mouseDownTrackId = trackId
     clientXWhenMouseDown = e.nativeEvent.clientX
+    curExtendDirection = direction
+    mouseDownItemPlaceHolderWith = quote.leftPlaceHolderWidth
+    mouseDownNextItemPlaceHolderWidth =
+      index >= list.length - 1 ? thresHoldWidth : list[index + 1].leftPlaceHolderWidth
+    console.log(
+      '=== onMouseDown id:',
+      quote.id,
+      ' , clientXWhenMouseDown:',
+      clientXWhenMouseDown,
+      ', e.nativeEvent.clientX:',
+      e.nativeEvent.clientX,
+      ', e.clientX',
+      e.clientX
+    )
   }
+
+  const { isPlaceHolder, leftPlaceHolderWidth } = quote
+
   return (
     <div className='itemWrapper'>
-      <span className='itemHandle left' onClick={handleExtendFuncMouseDown}>
+      <div className='placeHolder' style={{ width: leftPlaceHolderWidth }}></div>
+      <span
+        className='itemHandle left'
+        onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.left)}
+      >
         {'<'}
       </span>
-      <Draggable draggableId={quote.id} index={index}>
+      <Draggable draggableId={quote.id} index={index} isDragDisabled={isPlaceHolder}>
         {(provided, snapshot) => {
-          // console.log('=== Draggable: provided', provided)
-          // console.log('=== Draggable: snapshot', snapshot)
+          if (isPlaceHolder) {
+            return <div>123</div>
+          }
+
           const imgIndex = quote.index % maxImgInDemo
           const finalImIClassName = _.isEmpty(quote.specificImgClassName)
             ? `img${imgIndex}`
@@ -99,16 +233,14 @@ function Quote({ quote, index, trackId }) {
               {...provided.draggableProps}
               {...provided.dragHandleProps}
               style={{ width: quote.dynamicWidth, ...provided.draggableProps.style }}
-            >
-              {/* {quote.content} */}
-            </div>
+            ></div>
           )
         }}
       </Draggable>
       <span
         className='itemHandle right'
-        onClick={() => console.log(' right')}
-        onMouseDown={handleExtendFuncMouseDown}
+        // onClick={() => console.log('right')}
+        onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.right)}
       >
         {'>'}
       </span>
@@ -151,6 +283,26 @@ const initMultiTrackItemsData = () => {
   return listObj
 }
 
+const getNearByPlaceholder = (targetIndex, targetList, direction) => {
+  if (direction === ExtendDirection.right) {
+    // 往右时，最后项则直接返回null
+    if (targetIndex === targetList.length - 1) {
+      return null
+    }
+
+    const nextItem = targetList[targetIndex + 1]
+    return nextItem?.isPlaceholder === true ? nextItem : null
+  } else {
+    // 往左时，第一项则直接返回null
+    if (targetIndex === 0) {
+      return null
+    }
+
+    const prevItem = targetList[targetIndex - 1]
+    return prevItem?.isPlaceholder === true ? prevItem : null
+  }
+}
+
 let _incSeed = 1
 const getNewTrackName = () => {
   return `newTrack${_incSeed++}`
@@ -171,6 +323,11 @@ function QuoteApp() {
   function onDragEnd(result) {
     const { source, destination, draggableId } = result
     console.log('=== result:', result)
+
+    if (!destination) {
+      return
+    }
+
     // 通过draggableId来判定是否从外面拖拽过来的
     if (draggableId.startsWith(outsidePrefix)) {
       console.log('== 外部资源拖拽')
@@ -187,15 +344,10 @@ function QuoteApp() {
         ...pendingResult,
       }
 
-      console.log('=== pendingResult:', pendingResult)
-
       setAllTrackItemsObj(pendingTrackItemss)
       return
     }
 
-    if (!destination) {
-      return
-    }
     // 单轨道内拖拽
     if (source.droppableId === destination.droppableId) {
       // 索引没变则不做处理
@@ -245,7 +397,6 @@ function QuoteApp() {
     }
   }
 
-  console.log('=== draggableImgs:', draggableImgs)
   return (
     <section
       className='mainPage'
@@ -254,16 +405,42 @@ function QuoteApp() {
           return
         }
 
-        const curDiff = Math.max(0, mouseDownItem.dynamicWidth)
-        const diffX = e.clientX - clientXWhenMouseDown + curDiff
-        console.log('== onMouseMove diffX:', diffX)
-        const curTrackItems = allTrackItemsObj[mouseDownTrackId]
-        const newList = updateItemInState(mouseDownItemIndex, curTrackItems.items, { dynamicWidth: diffX })
+        // const isRightExtendDirection = curExtendDirection === ExtendDirection.right
+
+        // const curDiff = Math.max(0, mouseDownItem.dynamicWidth)
+        const curDynamicWidth = mouseDownItem.dynamicWidth
+        // const targetDynamixX = e.clientX - clientXWhenMouseDown + curDiff
+        const moveDiffX = e.clientX - clientXWhenMouseDown
+        // const absMoveDiffX = Math.abs(moveDiffX)
+        // console.log('== onMouseMove targetDynamixX:', targetDynamixX, ' , moveDiffX:', moveDiffX)
+        const clonedTrackItemsObj = _.cloneDeep(allTrackItemsObj)
+        const curTrackItems = clonedTrackItemsObj[mouseDownTrackId]
+        // const curItem = curTrackItems[mouseDownItemIndex]
+
+        const finalDynamicWidth =
+          curExtendDirection === ExtendDirection.right
+            ? curDynamicWidth + moveDiffX
+            : Math.max(curDynamicWidth - moveDiffX, thresHoldWidth)
+        // console.log(' ==== finalDynamicWidth:', finalDynamicWidth)
+        let newList = updateItemInState(mouseDownItemIndex, curTrackItems.items, {
+          dynamicWidth: finalDynamicWidth,
+          // leftPlaceHolderWidth: finalLeftPlaceHolderWidth,
+        })
+
+        if (curExtendDirection === ExtendDirection.right) {
+          newList = updateNextPlaceholdOnRightDirection(mouseDownItemIndex, newList, moveDiffX)
+        } else {
+          newList = updateNextPlaceholdOnLeftDirection(mouseDownItemIndex, newList, moveDiffX)
+        }
+
+        console.log('=== newList:', newList)
+
+        // const curTrackItems = allTrackItemsObj[mouseDownTrackId]
+
         console.log('=== newList:', newList)
         const pendingTrackItemsObj = _.cloneDeep(allTrackItemsObj)
         pendingTrackItemsObj[mouseDownTrackId].items = newList
         setAllTrackItemsObj(pendingTrackItemsObj)
-        // setState({ items: newList })
       }}
       onMouseUp={() => {
         console.log('=== onMouseUp')
@@ -271,7 +448,10 @@ function QuoteApp() {
         mouseDownTrackId = ''
         mouseDownItemIndex = -1
         clientXWhenMouseDown = undefined
+        mouseDownItemPlaceHolderWith = 0
+        mouseDownNextItemPlaceHolderWidth = 0
         mouseDownItem = undefined
+        curExtendDirection = undefined
       }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
@@ -285,14 +465,11 @@ function QuoteApp() {
                       <section ref={provided.innerRef} key={imgItem.id}>
                         <Draggable draggableId={imgItem.id} index={imgItem.index}>
                           {(provided, snapshot) => {
-                            // console.log('=== Draggable: provided', provided)
-                            // console.log('=== Draggable: snapshot', snapshot)
                             return (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                // style={{ ...provided.draggableProps.style }}
                               >
                                 <img src={imgItem.src} />
                                 <p>{imgItem.id}</p>
@@ -304,15 +481,6 @@ function QuoteApp() {
                     )
                   })
                 }
-                // return (
-                //   <div
-                //     ref={provided.innerRef}
-                //     {...provided.droppableProps}
-                //     className={`droppableSeperator ${snapshot.isDraggingOver ? 'dropping' : ''}`}
-                //   >
-                //     {provided.placeholder}
-                //   </div>
-                // )
               }}
             </Droppable>
           </div>
@@ -323,7 +491,7 @@ function QuoteApp() {
             if (_.isEmpty(curItemList) || _.isEmpty(curItemList.items)) {
               return null
             }
-            console.log('== curItemList:', curItemList)
+            // console.log('== curItemList:', curItemList)
             const seperatorDroppableId = `${seperatorPrefix}${trackId}`
             return (
               <section key={`${trackId}+${index}`}>
@@ -354,7 +522,12 @@ function QuoteApp() {
                           return (
                             <div key={quote.id}>
                               {/* <span>left</span> */}
-                              <Quote quote={quote} index={index} trackId={trackId} />
+                              <Quote
+                                quote={quote}
+                                index={index}
+                                trackId={trackId}
+                                list={curItemList?.items}
+                              />
                               {/* <span>right</span> */}
                             </div>
                           )
