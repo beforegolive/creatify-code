@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { Component } from 'react'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+
 // fake data generator
 const getItems = (count) =>
   Array.from({ length: count }, (v, k) => k).map((k) => ({

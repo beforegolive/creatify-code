@@ -4,8 +4,32 @@ $itemHeight: 40px;
   user-select: none;
   border: 3px solid lightcoral;
   height: 100vh;
+  display: flex;
+  padding-right: 20px;
+
+  aside {
+    width: 160px;
+    background-color: #001529;
+    margin-right: 20px;
+
+    .imgPanel {
+      border: 2px solid red;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      img {
+        width: 80%;
+        margin: 0 auto 20px;
+        padding: 2px;
+        cursor: grab;
+      }
+    }
+  }
 
   .dropArea {
+    flex: 1;
     & > section {
       & > div {
         display: flex;
@@ -84,6 +108,15 @@ $itemHeight: 40px;
             }
             &.img9 {
               background-image: url('../assets/img9.jpeg');
+            }
+            &.outside-img1 {
+              background-image: url('../assets/dragimg1.jpeg');
+            }
+            &.outside-img2 {
+              background-image: url('../assets/dragimg2.jpeg');
+            }
+            &.outside-img3 {
+              background-image: url('../assets/dragimg3.jpeg');
             }
           }
         }

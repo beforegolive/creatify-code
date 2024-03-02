@@ -3,6 +3,12 @@ import React, { useEffect, useState } from 'react'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import './index-func.scss'
 import _ from 'lodash'
+import dragImg1 from '../assets/dragimg1.jpeg'
+import dragImg2 from '../assets/dragimg2.jpeg'
+import dragImg3 from '../assets/dragimg3.jpeg'
+
+// demo中的最大背景图片数
+const maxImgInDemo = 9
 
 let mouseDownItemId = ''
 let mouseDownItemIndex = -1
@@ -11,17 +17,23 @@ let mouseDownTrackId = ''
 let clientXWhenMouseDown = undefined
 
 const seperatorPrefix = 'pre-'
+const outsidePrefix = 'outside-'
+
+let _incId = 0
+const createItem = (specificImgClassName = '', dynamicWidth = 0) => {
+  _incId++
+  return {
+    id: `id-${_incId}`,
+    content: `content ${_incId}`,
+    dynamicWidth: dynamicWidth,
+    specificImgClassName: specificImgClassName,
+    index: _incId,
+  }
+}
 
 const initialList = (total) =>
   Array.from({ length: total }, (v, k) => k).map((k, index) => {
-    const custom = {
-      id: `id-${k}`,
-      content: `Quote ${k}`,
-      dynamicWidth: 0,
-      index,
-    }
-
-    return custom
+    return createItem()
   })
 
 const reorder = (list, startIndex, endIndex) => {
@@ -43,9 +55,9 @@ const updateItemInState = (index, list, newProps) => {
  * Moves an item from one list to another list.
  */
 const move = (source, destination, droppableSource, droppableDestination) => {
-  const sourceClone = _.clone(source, true)
+  const sourceClone = _.cloneDeep(source)
   // Array.from(source)
-  const destClone = _.clone(destination, true)
+  const destClone = _.cloneDeep(destination)
   // Array.from(destination)
   const [removed] = sourceClone.splice(droppableSource.index, 1)
 
@@ -76,9 +88,13 @@ function Quote({ quote, index, trackId }) {
         {(provided, snapshot) => {
           // console.log('=== Draggable: provided', provided)
           // console.log('=== Draggable: snapshot', snapshot)
+          const imgIndex = quote.index % maxImgInDemo
+          const finalImIClassName = _.isEmpty(quote.specificImgClassName)
+            ? `img${imgIndex}`
+            : quote.specificImgClassName
           return (
             <div
-              className={`quoteItem background img${quote.index}`}
+              className={`quoteItem background ${finalImIClassName}`}
               ref={provided.innerRef}
               {...provided.draggableProps}
               {...provided.dragHandleProps}
@@ -100,9 +116,23 @@ function Quote({ quote, index, trackId }) {
   )
 }
 
-// const QuoteList = React.memo(function QuoteList({ items }) {
-
-// })
+const draggableImgs = [
+  {
+    index: 101,
+    id: `${outsidePrefix}img1`,
+    src: dragImg1,
+  },
+  {
+    index: 102,
+    id: `${outsidePrefix}img2`,
+    src: dragImg2,
+  },
+  {
+    index: 103,
+    id: `${outsidePrefix}img3`,
+    src: dragImg3,
+  },
+]
 
 const initMultiTrackItemsData = () => {
   const multiTrackList = initialList(7)
@@ -139,8 +169,30 @@ function QuoteApp() {
   console.log('=== allTrackItemsObj:', allTrackItemsObj)
 
   function onDragEnd(result) {
-    const { source, destination } = result
+    const { source, destination, draggableId } = result
     console.log('=== result:', result)
+    // 通过draggableId来判定是否从外面拖拽过来的
+    if (draggableId.startsWith(outsidePrefix)) {
+      console.log('== 外部资源拖拽')
+      // 直接在目标列表创建新数据项，并指定特点背景图
+      const clonedTrackItems = _.cloneDeep(allTrackItemsObj)
+      const targetTrackLine = clonedTrackItems[destination.droppableId] || { items: [] }
+      const newItem = createItem(draggableId)
+      targetTrackLine.items.splice(destination.index, 0, newItem)
+      const pendingResult = {}
+      pendingResult[destination.droppableId] = targetTrackLine
+      // result.splice(destination.index, 0, removed)
+      const pendingTrackItemss = {
+        ...clonedTrackItems,
+        ...pendingResult,
+      }
+
+      console.log('=== pendingResult:', pendingResult)
+
+      setAllTrackItemsObj(pendingTrackItemss)
+      return
+    }
+
     if (!destination) {
       return
     }
@@ -163,7 +215,7 @@ function QuoteApp() {
 
         const targetTrackKey = _.trimStart(destination.droppableId, seperatorPrefix)
         const targetTrackIndex = trackList.indexOf(targetTrackKey)
-        const pendingTrackList = _.clone(trackList, true)
+        const pendingTrackList = _.cloneDeep(trackList)
         const newTrackName = getNewTrackName()
         pendingTrackList.splice(targetTrackIndex, 0, newTrackName)
         setTrackList(pendingTrackList)
@@ -193,6 +245,7 @@ function QuoteApp() {
     }
   }
 
+  console.log('=== draggableImgs:', draggableImgs)
   return (
     <section
       className='mainPage'
@@ -207,7 +260,7 @@ function QuoteApp() {
         const curTrackItems = allTrackItemsObj[mouseDownTrackId]
         const newList = updateItemInState(mouseDownItemIndex, curTrackItems.items, { dynamicWidth: diffX })
         console.log('=== newList:', newList)
-        const pendingTrackItemsObj = _.clone(allTrackItemsObj, true)
+        const pendingTrackItemsObj = _.cloneDeep(allTrackItemsObj)
         pendingTrackItemsObj[mouseDownTrackId].items = newList
         setAllTrackItemsObj(pendingTrackItemsObj)
         // setState({ items: newList })
@@ -222,60 +275,99 @@ function QuoteApp() {
       }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
-        <main>
-          <aside></aside>
-          <section className='dropArea'>
-            {trackList.map((trackId, index) => {
-              const curItemList = allTrackItemsObj[trackId] || []
-              if (_.isEmpty(curItemList) || _.isEmpty(curItemList.items)) {
-                return null
-              }
-              console.log('== curItemList:', curItemList)
-              const seperatorDroppableId = `${seperatorPrefix}${trackId}`
-              return (
-                <section key={`${trackId}+${index}`}>
-                  <Droppable
-                    key={seperatorDroppableId}
-                    className='preArea'
-                    droppableId={seperatorDroppableId}
-                    direction='horizontal'
-                  >
-                    {(provided, snapshot) => {
-                      return (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`droppableSeperator ${snapshot.isDraggingOver ? 'dropping' : ''}`}
-                        >
-                          {provided.placeholder}
-                        </div>
-                      )
-                    }}
-                  </Droppable>
-                  <Droppable key={trackId} className='dropList' droppableId={trackId} direction='horizontal'>
-                    {(provided, snapshot) => {
-                      return (
-                        <div ref={provided.innerRef} {...provided.droppableProps}>
-                          {/* <QuoteList items={state.items} /> */}
-                          {curItemList?.items?.map((quote: QuoteType, index: number) => {
+        <aside>
+          <div className='imgPanel'>
+            <Droppable className='imgPickArea' droppableId={'imgPickArea'} isDropDisabled={true}>
+              {(provided, snapshot) => {
+                {
+                  return draggableImgs.map((imgItem, index) => {
+                    return (
+                      <section ref={provided.innerRef} key={imgItem.id}>
+                        <Draggable draggableId={imgItem.id} index={imgItem.index}>
+                          {(provided, snapshot) => {
+                            // console.log('=== Draggable: provided', provided)
+                            // console.log('=== Draggable: snapshot', snapshot)
                             return (
-                              <div key={quote.id}>
-                                {/* <span>left</span> */}
-                                <Quote quote={quote} index={index} trackId={trackId} />
-                                {/* <span>right</span> */}
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                // style={{ ...provided.draggableProps.style }}
+                              >
+                                <img src={imgItem.src} />
+                                <p>{imgItem.id}</p>
                               </div>
                             )
-                          })}
-                          {provided.placeholder}
-                        </div>
-                      )
-                    }}
-                  </Droppable>
-                </section>
-              )
-            })}
-          </section>
-        </main>
+                          }}
+                        </Draggable>
+                      </section>
+                    )
+                  })
+                }
+                // return (
+                //   <div
+                //     ref={provided.innerRef}
+                //     {...provided.droppableProps}
+                //     className={`droppableSeperator ${snapshot.isDraggingOver ? 'dropping' : ''}`}
+                //   >
+                //     {provided.placeholder}
+                //   </div>
+                // )
+              }}
+            </Droppable>
+          </div>
+        </aside>
+        <section className='dropArea'>
+          {trackList.map((trackId, index) => {
+            const curItemList = allTrackItemsObj[trackId] || []
+            if (_.isEmpty(curItemList) || _.isEmpty(curItemList.items)) {
+              return null
+            }
+            console.log('== curItemList:', curItemList)
+            const seperatorDroppableId = `${seperatorPrefix}${trackId}`
+            return (
+              <section key={`${trackId}+${index}`}>
+                <Droppable
+                  key={seperatorDroppableId}
+                  className='preArea'
+                  droppableId={seperatorDroppableId}
+                  direction='horizontal'
+                >
+                  {(provided, snapshot) => {
+                    return (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`droppableSeperator ${snapshot.isDraggingOver ? 'dropping' : ''}`}
+                      >
+                        {provided.placeholder}
+                      </div>
+                    )
+                  }}
+                </Droppable>
+                <Droppable key={trackId} className='dropList' droppableId={trackId} direction='horizontal'>
+                  {(provided, snapshot) => {
+                    return (
+                      <div ref={provided.innerRef} {...provided.droppableProps}>
+                        {/* <QuoteList items={state.items} /> */}
+                        {curItemList?.items?.map((quote: QuoteType, index: number) => {
+                          return (
+                            <div key={quote.id}>
+                              {/* <span>left</span> */}
+                              <Quote quote={quote} index={index} trackId={trackId} />
+                              {/* <span>right</span> */}
+                            </div>
+                          )
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )
+                  }}
+                </Droppable>
+              </section>
+            )
+          })}
+        </section>
       </DragDropContext>
     </section>
   )

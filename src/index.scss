@@ -33,16 +33,3 @@ code {
 .ant-breadcrumb {
   padding: 10px 40px 0;
 }
-
-.imgPanel {
-  border: 2px solid red;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  img {
-    width: 80%;
-    margin-bottom: 20px;
-    padding: 2px solid #eee;
-    cursor: grab;
-  }
-}
