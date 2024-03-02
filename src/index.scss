@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.rootContainer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  .rootLeft {
+    // flex: 1;
+    border: 1px solid green;
+  }
+  .rootRight {
+    flex: 1;
+    border: 1px solid lightblue;
+    width: 100%;
+  }
+}
+
+.version {
+  text-align: center;
+  color: rgb(175, 202, 65);
+  opacity: 0.5;
+  padding-right: 10px;
+}
+
+.ant-breadcrumb {
+  padding: 10px 40px 0;
+}

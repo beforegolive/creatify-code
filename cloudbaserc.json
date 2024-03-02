@@ -1,0 +1,20 @@
+{
+  "envId": "my-admin-9g6lsp2s0a00a98d",
+  "version": "2.0",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "functionRoot": "./functions",
+  "functions": [],
+  "region": "ap-guangzhou",
+  "framework": {
+    "name": "my-new-admin",
+    "plugins": {
+      "react": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "buildCommand": "npm run build",
+          "outputPath": "dist"
+        }
+      }
+    }
+  }
+}
