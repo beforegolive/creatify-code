@@ -81,34 +81,18 @@ const updateNextPlaceholdOnRightDirection = (targetIndex: number, targetList: IC
 
   const nextItemIndex = targetIndex + 1
   let nextItem = clonedTargetList[nextItemIndex]
-  // const hasPlaceHolderItem = nextItem?.isPlaceHolder === true
+
   const { leftPlaceHolderWidth } = nextItem
   const curNextItemLeftPlaceHolderWith = mouseDownNextItemPlaceHolderWidth
-  const absDiffX = Math.abs(diffX)
+
   if (diffX > 0) {
-    console.log('=== 宽度扩大')
-    // const finalPlaceHolderWidth = Math.max(leftPlaceHolderWidth - diffX, thresHoldWidth)
     const finalPlaceHolderWidth = Math.max(curNextItemLeftPlaceHolderWith - diffX, thresHoldWidth)
-    // console.log(
-    //   '=== leftPlaceHolderWidth:',
-    //   leftPlaceHolderWidth,
-    //   ', diffX:',
-    //   diffX,
-    //   ', finalPlaceHolderWidth:',
-    //   finalPlaceHolderWidth
-    // )
-    // 宽度扩大
-    // 当右侧数据占位宽度有值，则吞噬该宽度
+
     if (curNextItemLeftPlaceHolderWith > thresHoldWidth) {
-      // const finalPlaceHolderWidth = Math.max(leftPlaceHolderWidth - absDiffX, thresHoldWidth)
       const pendingItem = { ...nextItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
       clonedTargetList[nextItemIndex] = pendingItem
     }
   } else {
-    console.log('=== 宽度减小')
-    console.log('=== leftPlaceHolderWidth:', leftPlaceHolderWidth, ', diffX:', diffX)
-    // 宽度减少
-
     const finalPlaceHolderWidth = Math.max(curNextItemLeftPlaceHolderWith + diffX, thresHoldWidth)
     const pendingItem = { ...nextItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
     clonedTargetList[nextItemIndex] = pendingItem
@@ -122,42 +106,15 @@ const updateNextPlaceholdOnLeftDirection = (targetIndex, targetList: ICoreItem[]
   const curItem = clonedTargetList[targetIndex]
   const { leftPlaceHolderWidth } = curItem
 
-  // mouseDownItemPlaceHolderWith
-  console.log('=== onLeft diffX:', diffX)
-
   let finalPlaceHolderWidth = thresHoldWidth
   if (diffX > 0) {
     finalPlaceHolderWidth = Math.max(mouseDownItemPlaceHolderWith + diffX, thresHoldWidth)
   } else {
     finalPlaceHolderWidth = Math.max(mouseDownItemPlaceHolderWith + diffX, thresHoldWidth)
   }
-  console.log(
-    '=== onLeft diffX:',
-    diffX,
-    ', leftPlaceHolderWidth:',
-    leftPlaceHolderWidth,
-    ', finalPlaceHolderWidth:',
-    finalPlaceHolderWidth,
-    ', mouseDownItemPlaceHolderWith:',
-    mouseDownItemPlaceHolderWith
-  )
 
-  // console.log(
-  //   '=== leftPlaceHolderWidth:',
-  //   leftPlaceHolderWidth,
-  //   ', absDiffX:',
-  //   absDiffX,
-  //   ', finalPlaceHolderWidth:',
-  //   finalPlaceHolderWidth
-  // )
-  // if (diffX > 0) {
-  // 宽度缩小
-  // const finalWidth = Math.max(leftPlaceHolderWidth + diffX, thresHoldWidth)
   const pendingItem = { ...curItem, leftPlaceHolderWidth: finalPlaceHolderWidth }
   clonedTargetList[targetIndex] = pendingItem
-  // } else {
-
-  // }
 
   return clonedTargetList
 }
@@ -181,6 +138,7 @@ const move = (source, destination, droppableSource, droppableDestination) => {
   return result
 }
 
+// 外部图片资源
 const draggableImgs = [
   {
     index: 101,
@@ -200,27 +158,28 @@ const draggableImgs = [
 ]
 
 const initMultiTrackItemsData = () => {
-  const multiTrackList = initialList(7)
+  const multiTrackList = initialList(6)
   const listObj = {
     track1: {
-      items: multiTrackList.slice(0, 2),
+      items: multiTrackList.slice(0, 1),
     },
     track2: {
-      items: multiTrackList.slice(2, 4),
+      items: multiTrackList.slice(1, 3),
     },
     track3: {
-      items: multiTrackList.slice(4, 7),
+      items: multiTrackList.slice(3, 6),
     },
   }
 
   return listObj
 }
 
-let _incSeed = 1
+let _incTrackSeed = 1
 const getNewTrackName = () => {
-  return `newTrack${_incSeed++}`
+  return `newTrack${_incTrackSeed++}`
 }
 
+/** 主应用实体 */
 function QuoteApp() {
   const [state, setState] = useState({ items: initialList(5) })
   const [trackList, setTrackList] = useState(['track1', 'track2', 'track3'])
@@ -228,10 +187,12 @@ function QuoteApp() {
   const [allTrackItemsObj, setAllTrackItemsObj] = useState(initData)
   const [draggingItemId, setDraggingItemId] = useState('')
 
+  /** 通过落下的轨道Id获取对应轨道内的数据列表 */
   const getItemListFromKey = (dropableId: string) => {
     return allTrackItemsObj[dropableId]?.items || []
   }
 
+  /** 可拖拽的单个实体项 */
   function Quote({ quote, index, trackId, list }) {
     const handleExtendFuncMouseDown = (e, direction: ExtendDirection) => {
       mouseDownItemId = quote.id
@@ -252,7 +213,7 @@ function QuoteApp() {
       <div className='itemWrapper'>
         {!isCurrItemDragging && (
           <>
-            {' '}
+            {/* 每个数据项左侧的占位符，用于配合扩展按钮交互 */}
             <div className='placeHolder' style={{ width: leftPlaceHolderWidth }}></div>
             <span
               className='itemHandle left'
@@ -282,7 +243,6 @@ function QuoteApp() {
         {!isCurrItemDragging && (
           <span
             className='itemHandle right'
-            // onClick={() => console.log('right')}
             onMouseDown={(e) => handleExtendFuncMouseDown(e, ExtendDirection.right)}
           >
             {'>'}
@@ -294,7 +254,6 @@ function QuoteApp() {
 
   function onDragEnd(result) {
     const { source, destination, draggableId } = result
-    console.log('=== result:', result)
 
     setDraggingItemId('')
 
@@ -304,6 +263,7 @@ function QuoteApp() {
 
     let curDestination = { ...destination }
 
+    // 如果拖拽项落在轨道间隔处，则创建新的轨道，同时更新目标轨道信息
     if (destination.droppableId.startsWith(seperatorPrefix)) {
       // 新建轨道逻辑
       console.log('=== 新建轨道')
@@ -321,17 +281,16 @@ function QuoteApp() {
       // const newDestination =
     }
 
-    // 通过draggableId来判定是否从外面拖拽过来的
+    // 通过draggableId的前缀来判定是否外部资源拖拽过来的
     if (draggableId.startsWith(outsidePrefix)) {
       console.log('== 外部资源拖拽')
-      // 直接在目标列表创建新数据项，并指定特点背景图
+      // 直接在目标列表创建新数据项，并指定外部资源的背景图
       const clonedTrackItems = _.cloneDeep(allTrackItemsObj)
       const targetTrackLine = clonedTrackItems[curDestination.droppableId] || { items: [] }
       const newItem = createItem(draggableId)
       targetTrackLine.items.splice(curDestination.index, 0, newItem)
       const pendingResult = {}
       pendingResult[curDestination.droppableId] = targetTrackLine
-      // result.splice(destination.index, 0, removed)
       const pendingTrackItemss = {
         ...clonedTrackItems,
         ...pendingResult,
@@ -341,7 +300,7 @@ function QuoteApp() {
       return
     }
 
-    // 单轨道内拖拽
+    // 单轨道内拖拽，直接列表间重新排序即可
     if (source.droppableId === curDestination.droppableId) {
       // 索引没变则不做处理
       if (curDestination.index === result.source.index) {
@@ -354,39 +313,12 @@ function QuoteApp() {
     } else {
       // 跨轨道拖拽
       console.log('=== sourceId:', source.droppableId, ' , targetId:', curDestination.droppableId)
-      // if (destination.droppableId.startsWith(seperatorPrefix)) {
-      //   // 新建轨道逻辑
-      //   console.log('=== 新建轨道')
-
-      //   const targetTrackKey = _.trimStart(destination.droppableId, seperatorPrefix)
-      //   const targetTrackIndex = trackList.indexOf(targetTrackKey)
-      //   const pendingTrackList = _.cloneDeep(trackList)
-      //   const newTrackName = getNewTrackName()
-      //   pendingTrackList.splice(targetTrackIndex, 0, newTrackName)
-      //   setTrackList(pendingTrackList)
-
-      //   const sourceList = getItemListFromKey(source.droppableId)
-      //   const newDestination = { ...destination, index: 0, droppableId: newTrackName }
-      //   const destinationList = getItemListFromKey(newDestination.droppableId)
-      //   console.log('== newDestination:', newDestination)
-      //   console.log('== destinationList:', destinationList)
-      //   const result = move(sourceList, destinationList, source, newDestination)
-      //   const pendingData = { ...allTrackItemsObj, ...result }
-      //   setAllTrackItemsObj(pendingData)
-
-      //   console.log('== pendingTrackList:', pendingTrackList)
-
-      //   return
-      // } else {
-      // 跨轨道置换
       const sourceList = getItemListFromKey(source.droppableId)
       const destinationList = getItemListFromKey(curDestination.droppableId)
-      console.log('== sourceItemList:', sourceList)
-      console.log('== destinationList:', destinationList)
+
       const result = move(sourceList, destinationList, source, curDestination)
       const pendingData = { ...allTrackItemsObj, ...result }
       setAllTrackItemsObj(pendingData)
-      // }
     }
   }
 
@@ -394,30 +326,26 @@ function QuoteApp() {
     <section
       className='mainPage'
       onMouseMove={(e) => {
+        // 【核心方法】点击左右扩展按钮修改拖动项和占位符的宽度
+        // 注意！左右两边扩展按钮拖动时逻辑不同，要分别处理
         if (_.isEmpty(mouseDownItemId) || clientXWhenMouseDown === undefined) {
           return
         }
 
-        // const isRightExtendDirection = curExtendDirection === ExtendDirection.right
-
-        // const curDiff = Math.max(0, mouseDownItem.dynamicWidth)
         const curDynamicWidth = mouseDownItem.dynamicWidth
-        // const targetDynamixX = e.clientX - clientXWhenMouseDown + curDiff
+
         const moveDiffX = e.clientX - clientXWhenMouseDown
-        // const absMoveDiffX = Math.abs(moveDiffX)
-        // console.log('== onMouseMove targetDynamixX:', targetDynamixX, ' , moveDiffX:', moveDiffX)
+
         const clonedTrackItemsObj = _.cloneDeep(allTrackItemsObj)
         const curTrackItems = clonedTrackItemsObj[mouseDownTrackId]
-        // const curItem = curTrackItems[mouseDownItemIndex]
 
         const finalDynamicWidth =
           curExtendDirection === ExtendDirection.right
             ? curDynamicWidth + moveDiffX
             : Math.max(curDynamicWidth - moveDiffX, thresHoldWidth)
-        // console.log(' ==== finalDynamicWidth:', finalDynamicWidth)
+
         let newList = updateItemInState(mouseDownItemIndex, curTrackItems.items, {
           dynamicWidth: finalDynamicWidth,
-          // leftPlaceHolderWidth: finalLeftPlaceHolderWidth,
         })
 
         if (curExtendDirection === ExtendDirection.right) {
@@ -426,17 +354,12 @@ function QuoteApp() {
           newList = updateNextPlaceholdOnLeftDirection(mouseDownItemIndex, newList, moveDiffX)
         }
 
-        console.log('=== newList:', newList)
-
-        // const curTrackItems = allTrackItemsObj[mouseDownTrackId]
-
-        console.log('=== newList:', newList)
         const pendingTrackItemsObj = _.cloneDeep(allTrackItemsObj)
         pendingTrackItemsObj[mouseDownTrackId].items = newList
         setAllTrackItemsObj(pendingTrackItemsObj)
       }}
       onMouseUp={() => {
-        console.log('=== onMouseUp')
+        // 扩展按钮点击放开的逻辑，和mouseDown对应，用于相应变量重置
         mouseDownItemId = ''
         mouseDownTrackId = ''
         mouseDownItemIndex = -1
@@ -451,11 +374,10 @@ function QuoteApp() {
         onDragEnd={onDragEnd}
         onBeforeDragStart={(e) => {
           setDraggingItemId(e.draggableId)
-          console.log('=== onBeforeDragStart e:', e)
         }}
-        onDragStart={(e) => console.log('=== onDragStart e:', e)}
       >
         <aside>
+          {/* 外部资源区域 */}
           <div className='imgPanel'>
             <Droppable className='imgPickArea' droppableId={'imgPickArea'} isDropDisabled={true}>
               {(provided, snapshot) => {
@@ -495,6 +417,7 @@ function QuoteApp() {
             const seperatorDroppableId = `${seperatorPrefix}${trackId}`
             return (
               <section key={`${trackId}+${index}`}>
+                {/* 用于拖动放置的轨道间占位空间，用于拖动时创建新轨道 */}
                 <Droppable
                   key={seperatorDroppableId}
                   className='preArea'
@@ -513,6 +436,7 @@ function QuoteApp() {
                     )
                   }}
                 </Droppable>
+                {/* 用于拖动放置的轨道区域展示 */}
                 <Droppable key={trackId} className='dropList' droppableId={trackId} direction='horizontal'>
                   {(provided, snapshot) => {
                     return (
