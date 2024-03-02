@@ -7,6 +7,7 @@ import dragImg1 from '../assets/dragimg1.jpeg'
 import dragImg2 from '../assets/dragimg2.jpeg'
 import dragImg3 from '../assets/dragimg3.jpeg'
 
+// 用于点击的扩展按钮是左边还是右边
 enum ExtendDirection {
   right = 0,
   left,
@@ -15,9 +16,12 @@ enum ExtendDirection {
 // demo中的最大背景图片数
 const maxImgInDemo = 9
 
+// 点击扩展按钮时的数据项Id
 let mouseDownItemId = ''
+// 点击扩展按钮时的数据索引
 let mouseDownItemIndex = -1
 let mouseDownItem = null
+
 let mouseDownItemPlaceHolderWith = 0
 let mouseDownNextItemPlaceHolderWidth = 0
 let mouseDownTrackId = ''
@@ -29,12 +33,17 @@ const seperatorPrefix = 'pre-'
 const outsidePrefix = 'outside-'
 
 interface ICoreItem {
+  // 数据项id,唯一性标识
   id: string
+  // 数据项索引
   index: number
+  // 数据项正文，呈现逻辑暂未用到
   content: string
+  // 数据项的动态宽度
   dynamicWidth: number
+  // 数据项指定背景图，用于外部资源拖动时指定
   specificImgClassName: string
-  // isPlaceHolder: boolean
+  // 数据项左侧占位区域宽度
   leftPlaceHolderWidth: number
 }
 
@@ -56,6 +65,7 @@ const initialList = (total) =>
     return createItem()
   })
 
+/** 单轨道拖拽时的重新排序逻辑 */
 const reorder = (list, startIndex, endIndex) => {
   const result = _.cloneDeep(list)
   const [removed] = result.splice(startIndex, 1)
@@ -67,11 +77,12 @@ const reorder = (list, startIndex, endIndex) => {
 const updateItemInState = (index, list, newProps) => {
   const clonedArr = _.cloneDeep(list)
   clonedArr[index] = { ...clonedArr[index], ...newProps }
-  // clonedArr[index]=
+
   return clonedArr
 }
 
 const thresHoldWidth = 5
+/** 右扩展按钮拖动时，对占位符区域的处理逻辑 */
 const updateNextPlaceholdOnRightDirection = (targetIndex: number, targetList: ICoreItem[], diffX: number) => {
   const clonedTargetList = _.cloneDeep(targetList)
   // 往右时，最后项则直接返回null
@@ -101,10 +112,11 @@ const updateNextPlaceholdOnRightDirection = (targetIndex: number, targetList: IC
   return clonedTargetList
 }
 
+/** 左扩展按钮拖动时，对占位符区域的处理逻辑 */
 const updateNextPlaceholdOnLeftDirection = (targetIndex, targetList: ICoreItem[], diffX: number) => {
   const clonedTargetList = _.cloneDeep(targetList)
   const curItem = clonedTargetList[targetIndex]
-  const { leftPlaceHolderWidth } = curItem
+  // const { leftPlaceHolderWidth } = curItem
 
   let finalPlaceHolderWidth = thresHoldWidth
   if (diffX > 0) {
@@ -120,7 +132,7 @@ const updateNextPlaceholdOnLeftDirection = (targetIndex, targetList: ICoreItem[]
 }
 
 /**
- * Moves an item from one list to another list.
+ * 不同轨道间的数据拖拽移动逻辑
  */
 const move = (source, destination, droppableSource, droppableDestination) => {
   const sourceClone = _.cloneDeep(source)
@@ -181,7 +193,6 @@ const getNewTrackName = () => {
 
 /** 主应用实体 */
 function QuoteApp() {
-  const [state, setState] = useState({ items: initialList(5) })
   const [trackList, setTrackList] = useState(['track1', 'track2', 'track3'])
   const initData = initMultiTrackItemsData()
   const [allTrackItemsObj, setAllTrackItemsObj] = useState(initData)
