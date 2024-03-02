@@ -1,7 +1,3 @@
-### 部署
+### Start
 
-执行命令`tcb`或`npm run deploy`完成部署。
-
-该命令会读取 cloudbaserc.json 中的配置。假如第一次执行 tcb，会根据提示自动生成该文件。
-
-目前每次部署时都需要手动确定一下，如何移除人工确认？【待调研】
+run `npm start`
