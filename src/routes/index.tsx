@@ -6,9 +6,9 @@ import { HashRouter, Routes, Route } from 'react-router-dom'
 // import MobileLayout from './LayoutMobile'
 // import App from '../App'
 import Entry from '../pages/index'
-import Multi from '../pages/index-multi'
-import Horizontal from '../pages/index-hori'
-import Func from '../pages/index-func'
+// import Multi from '../pages/index-multi'
+// import Horizontal from '../pages/index-hori'
+// import Func from '../pages'
 
 const AppRouter = () => {
   // const isMobile = window.navigator.userAgent.toLowerCase().includes('mobi')
@@ -19,9 +19,7 @@ const AppRouter = () => {
       <Routes>
         {/* @ts-ignore */}
         {/* <Route element={<PageLayout />}> */}
-        <Route index element={<Func />} />
-        <Route path='/multi' element={<Multi />} />
-        <Route path='/hori' element={<Horizontal />} />
+        <Route index element={<Entry />} />
         {/* </Route> */}
       </Routes>
     </HashRouter>
