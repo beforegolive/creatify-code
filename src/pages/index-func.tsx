@@ -328,16 +328,35 @@ function QuoteApp() {
       return
     }
 
+    let curDestination = { ...destination }
+
+    if (destination.droppableId.startsWith(seperatorPrefix)) {
+      // 新建轨道逻辑
+      console.log('=== 新建轨道')
+
+      const targetTrackKey = _.trimStart(destination.droppableId, seperatorPrefix)
+      const targetTrackIndex = trackList.indexOf(targetTrackKey)
+      const pendingTrackList = _.cloneDeep(trackList)
+      const newTrackName = getNewTrackName()
+      pendingTrackList.splice(targetTrackIndex, 0, newTrackName)
+      setTrackList(pendingTrackList)
+
+      // 新建轨道后，目标信息要做调整
+      curDestination = { ...destination, index: 0, droppableId: newTrackName }
+
+      // const newDestination =
+    }
+
     // 通过draggableId来判定是否从外面拖拽过来的
     if (draggableId.startsWith(outsidePrefix)) {
       console.log('== 外部资源拖拽')
       // 直接在目标列表创建新数据项，并指定特点背景图
       const clonedTrackItems = _.cloneDeep(allTrackItemsObj)
-      const targetTrackLine = clonedTrackItems[destination.droppableId] || { items: [] }
+      const targetTrackLine = clonedTrackItems[curDestination.droppableId] || { items: [] }
       const newItem = createItem(draggableId)
-      targetTrackLine.items.splice(destination.index, 0, newItem)
+      targetTrackLine.items.splice(curDestination.index, 0, newItem)
       const pendingResult = {}
-      pendingResult[destination.droppableId] = targetTrackLine
+      pendingResult[curDestination.droppableId] = targetTrackLine
       // result.splice(destination.index, 0, removed)
       const pendingTrackItemss = {
         ...clonedTrackItems,
@@ -349,51 +368,51 @@ function QuoteApp() {
     }
 
     // 单轨道内拖拽
-    if (source.droppableId === destination.droppableId) {
+    if (source.droppableId === curDestination.droppableId) {
       // 索引没变则不做处理
-      if (result.destination.index === result.source.index) {
+      if (curDestination.index === result.source.index) {
         return
       }
 
-      const items = reorder(state.items, result.source.index, result.destination.index)
+      const items = reorder(state.items, result.source.index, curDestination.index)
 
       setState({ items })
     } else {
       // 跨轨道拖拽
-      console.log('=== sourceId:', source.droppableId, ' , targetId:', destination.droppableId)
-      if (destination.droppableId.startsWith(seperatorPrefix)) {
-        // 新建轨道逻辑
-        console.log('=== 新建轨道')
+      console.log('=== sourceId:', source.droppableId, ' , targetId:', curDestination.droppableId)
+      // if (destination.droppableId.startsWith(seperatorPrefix)) {
+      //   // 新建轨道逻辑
+      //   console.log('=== 新建轨道')
 
-        const targetTrackKey = _.trimStart(destination.droppableId, seperatorPrefix)
-        const targetTrackIndex = trackList.indexOf(targetTrackKey)
-        const pendingTrackList = _.cloneDeep(trackList)
-        const newTrackName = getNewTrackName()
-        pendingTrackList.splice(targetTrackIndex, 0, newTrackName)
-        setTrackList(pendingTrackList)
+      //   const targetTrackKey = _.trimStart(destination.droppableId, seperatorPrefix)
+      //   const targetTrackIndex = trackList.indexOf(targetTrackKey)
+      //   const pendingTrackList = _.cloneDeep(trackList)
+      //   const newTrackName = getNewTrackName()
+      //   pendingTrackList.splice(targetTrackIndex, 0, newTrackName)
+      //   setTrackList(pendingTrackList)
 
-        const sourceList = getItemListFromKey(source.droppableId)
-        const newDestination = { ...destination, index: 0, droppableId: newTrackName }
-        const destinationList = getItemListFromKey(newDestination.droppableId)
-        console.log('== newDestination:', newDestination)
-        console.log('== destinationList:', destinationList)
-        const result = move(sourceList, destinationList, source, newDestination)
-        const pendingData = { ...allTrackItemsObj, ...result }
-        setAllTrackItemsObj(pendingData)
+      //   const sourceList = getItemListFromKey(source.droppableId)
+      //   const newDestination = { ...destination, index: 0, droppableId: newTrackName }
+      //   const destinationList = getItemListFromKey(newDestination.droppableId)
+      //   console.log('== newDestination:', newDestination)
+      //   console.log('== destinationList:', destinationList)
+      //   const result = move(sourceList, destinationList, source, newDestination)
+      //   const pendingData = { ...allTrackItemsObj, ...result }
+      //   setAllTrackItemsObj(pendingData)
 
-        console.log('== pendingTrackList:', pendingTrackList)
+      //   console.log('== pendingTrackList:', pendingTrackList)
 
-        return
-      } else {
-        // 跨轨道置换
-        const sourceList = getItemListFromKey(source.droppableId)
-        const destinationList = getItemListFromKey(destination.droppableId)
-        console.log('== sourceItemList:', sourceList)
-        console.log('== destinationList:', destinationList)
-        const result = move(sourceList, destinationList, source, destination)
-        const pendingData = { ...allTrackItemsObj, ...result }
-        setAllTrackItemsObj(pendingData)
-      }
+      //   return
+      // } else {
+      // 跨轨道置换
+      const sourceList = getItemListFromKey(source.droppableId)
+      const destinationList = getItemListFromKey(curDestination.droppableId)
+      console.log('== sourceItemList:', sourceList)
+      console.log('== destinationList:', destinationList)
+      const result = move(sourceList, destinationList, source, curDestination)
+      const pendingData = { ...allTrackItemsObj, ...result }
+      setAllTrackItemsObj(pendingData)
+      // }
     }
   }
 
