@@ -1,12 +1,20 @@
 // @ts-nocheck
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import './index-func.scss'
+import _ from 'lodash'
 
-const initial = Array.from({ length: 10 }, (v, k) => k).map((k) => {
+let mouseDownItemId = ''
+let mouseDownItemIndex = -1
+let mouseDownItem = null
+let clientXWhenMouseDown = undefined
+
+const initial = Array.from({ length: 10 }, (v, k) => k).map((k, index) => {
   const custom = {
     id: `id-${k}`,
     content: `Quote ${k}`,
+    dynamicWidth: 0,
+    index,
   }
 
   return custom
@@ -20,19 +28,20 @@ const reorder = (list, startIndex, endIndex) => {
   return result
 }
 
-// const QuoteItem = styled.div`
-//   width: 200px;
-//   border: 1px solid grey;
-//   margin-bottom: ${grid}px;
-//   background-color: lightblue;
-//   padding: ${grid}px;
-// `
+const updateItemInState = (index, list, newProps) => {
+  const clonedArr = _.cloneDeep(list)
+  clonedArr[index] = { ...clonedArr[index], ...newProps }
+  // clonedArr[index]=
+  return clonedArr
+}
 
 function Quote({ quote, index }) {
   return (
     <div className='itemWrapper'>
-      {/* <span onClick={() => console.log('left')}>left</span> */}
-      <Draggable draggableId={quote.id} index={index} disableInteractiveElementBlocking={false}>
+      {/* <span className='itemHandle left' onClick={() => console.log('left')}>
+        {'<'}
+      </span> */}
+      <Draggable draggableId={quote.id} index={index}>
         {(provided, snapshot) => {
           console.log('=== Draggable: provided', provided)
           console.log('=== Draggable: snapshot', snapshot)
@@ -42,13 +51,26 @@ function Quote({ quote, index }) {
               ref={provided.innerRef}
               {...provided.draggableProps}
               {...provided.dragHandleProps}
+              style={{ width: quote.dynamicWidth, ...provided.draggableProps.style }}
             >
-              {quote.content}
+              {quote.content} - {}
             </div>
           )
         }}
       </Draggable>
-      {/* <span onClick={() => console.log(' right')}>right</span> */}
+      <span
+        className='itemHandle right'
+        onClick={() => console.log(' right')}
+        onMouseDown={(e) => {
+          console.log('=== onMouseDown id:', quote.id)
+          mouseDownItemId = quote.id
+          mouseDownItemIndex = index
+          mouseDownItem = quote
+          clientXWhenMouseDown = e.nativeEvent.clientX
+        }}
+      >
+        {'>'}
+      </span>
     </div>
   )
 }
@@ -76,31 +98,53 @@ function QuoteApp() {
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <section className='dropArea'>
-        <Droppable className='dropList' droppableId='list' direction='horizontal'>
-          {(provided, snapshot) => {
-            console.log('*** Droppable provided:', provided)
-            console.log('*** Droppable snapshot:', snapshot)
-            return (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
-                {/* <QuoteList quotes={state.quotes} /> */}
-                {state.quotes.map((quote: QuoteType, index: number) => {
-                  return (
-                    <div key={quote.id}>
-                      {/* <span>left</span> */}
-                      <Quote quote={quote} index={index} />
-                      {/* <span>right</span> */}
-                    </div>
-                  )
-                })}
-                {provided.placeholder}
-              </div>
-            )
-          }}
-        </Droppable>
-      </section>
-    </DragDropContext>
+    <section
+      className='mainPage'
+      onMouseMove={(e) => {
+        if (_.isEmpty(mouseDownItemId) || clientXWhenMouseDown === undefined) {
+          return
+        }
+
+        const curDiff = Math.max(0, mouseDownItem.dynamicWidth)
+        const diffX = e.clientX - clientXWhenMouseDown + curDiff
+        console.log('== onMouseMove diffX:', diffX)
+        const newList = updateItemInState(mouseDownItemIndex, state.quotes, { dynamicWidth: diffX })
+        setState({ quotes: newList })
+      }}
+      onMouseUp={() => {
+        console.log('=== onMouseUp')
+        mouseDownItemId = ''
+        mouseDownItemIndex = -1
+        clientXWhenMouseDown = undefined
+        mouseDownItem = undefined
+      }}
+    >
+      <DragDropContext onDragEnd={onDragEnd}>
+        <section className='dropArea'>
+          <Droppable className='dropList' droppableId='list' direction='horizontal'>
+            {(provided, snapshot) => {
+              console.log('*** Droppable provided:', provided)
+              console.log('*** Droppable snapshot:', snapshot)
+              return (
+                <div ref={provided.innerRef} {...provided.droppableProps}>
+                  {/* <QuoteList quotes={state.quotes} /> */}
+                  {state.quotes.map((quote: QuoteType, index: number) => {
+                    return (
+                      <div key={quote.id}>
+                        {/* <span>left</span> */}
+                        <Quote quote={quote} index={index} />
+                        {/* <span>right</span> */}
+                      </div>
+                    )
+                  })}
+                  {provided.placeholder}
+                </div>
+              )
+            }}
+          </Droppable>
+        </section>
+      </DragDropContext>
+    </section>
   )
 }
 
